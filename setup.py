@@ -16,7 +16,7 @@ else:
 
 setup(
     name='serving-utils',
-    version='0.9.2-peat',
+    version='0.9.3-peat',
     description='Some utilities for tensorflow serving',
     long_description=long_description,
     python_requires='>=3.6',
