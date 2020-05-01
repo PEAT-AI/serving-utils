@@ -75,6 +75,10 @@ class Connection:
         self.sync_stub = prediction_service_pb2_grpc.PredictionServiceStub(self.sync_channel)
         self.async_stub = prediction_service_grpc.PredictionServiceStub(self.async_channel)
 
+    def __del__(self):
+        self.async_channel.close()
+        del self.async_channel
+
 
 class EmptyPool(Exception):
     pass
@@ -138,6 +142,10 @@ class Client:
         self.n_trys = n_trys
 
         self.logger = logger or LOGGER
+       
+    def __del__(self):
+        for address in self._pool.keys():
+            del self._pool[address]
 
     def _setup_connections(self):
         host = self._host
