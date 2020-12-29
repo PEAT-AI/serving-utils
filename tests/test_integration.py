@@ -16,6 +16,9 @@ async def test_client():
         8502,
         8503,
         8504,
+        8505,
+        8506,
+        8507,
     ]
 
     while True:
@@ -55,6 +58,32 @@ async def test_client():
         PredictInput(name='a', value=np.int16(2)),
         PredictInput(name='b', value=np.int16(3)),
     ]
+    output_names = ['c']
+    expected_output = {'c': 8}  # c = a + 2 * b
+    for client in clients:
+        actual_output = client.predict(
+            data=req_data,
+            output_names=output_names,
+            model_name=model_name,
+            model_signature_name='test',
+        )
+
+        assert actual_output == expected_output
+
+        actual_output = await client.async_predict(
+            data=req_data,
+            output_names=output_names,
+            model_name=model_name,
+            model_signature_name='test',
+        )
+
+        assert actual_output == expected_output
+
+    # test client predict with simpler format
+    req_data = {
+        'a': np.int16(2),
+        'b': np.int16(3),
+    }
     output_names = ['c']
     expected_output = {'c': 8}  # c = a + 2 * b
     for client in clients:

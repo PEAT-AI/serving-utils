@@ -1,7 +1,7 @@
 from functools import partial
 import logging
 import socket
-from typing import List
+from typing import List, Union, Mapping
 
 import asyncio
 from collections import namedtuple
@@ -10,7 +10,10 @@ import grpc
 from grpclib.client import Channel
 from grpclib.exceptions import GRPCError
 from grpclib.const import Status
-import tensorflow.compat.v1 as tf
+try:
+    import tensorflow.compat.v1 as tf
+except ImportError:
+    import tensorflow as tf
 
 from .round_robin_map import RoundRobinMap
 
@@ -33,6 +36,8 @@ def copy_message(src, dst):
 
 
 PredictInput = namedtuple('PredictInput', ['name', 'value'])
+ORIGINAL_DATA_TYPE = List[PredictInput]
+NEW_DATA_TYPE = Mapping[str, 'np.ndarray']
 
 
 class Connection:
@@ -172,8 +177,8 @@ class Client:
 
     @staticmethod
     def _predict_request(
-            data,
-            model_name,
+            data: Union[ORIGINAL_DATA_TYPE, NEW_DATA_TYPE],
+            model_name: str,
             output_names=None,
             model_signature_name=None,
         ):
@@ -183,7 +188,14 @@ class Client:
             req.model_spec.signature_name = model_signature_name
 
         for datum in data:
-            copy_message(tf.make_tensor_proto(datum.value), req.inputs[datum.name])
+            if isinstance(datum, PredictInput):
+                # old way to pass input
+                name = datum.name
+                value = datum.value
+            else:
+                name = datum
+                value = data[datum]
+            copy_message(tf.make_tensor_proto(value), req.inputs[name])
         if output_names is not None:
             for output_name in output_names:
                 req.output_filter.append(output_name)
